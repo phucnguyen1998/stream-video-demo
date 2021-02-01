@@ -7,77 +7,132 @@
  */
 
 import React from 'react';
-import RNCamera from './RNCamera'
 import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar, StyleSheet,
-  Text, View
+  StyleSheet,
+  View,
+  Text,
+  StatusBar,
+  Dimensions,
+  TouchableOpacity,
+  PermissionsAndroid,
 } from 'react-native';
-import {
-  Colors, Header
-} from 'react-native/Libraries/NewAppScreen';
+
+import { NodeCameraView } from 'react-native-nodemediaclient';
 
 
-const App: () => React$Node = () => {
-  return (
-    <>
-      {/* <StatusBar barStyle="dark-content" />
-      <SafeAreaView>
-        <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          style={styles.scrollView}>
-          <Header />
-          {global.HermesInternal == null ? null : (
-            <View style={styles.engine}>
-              <Text style={styles.footer}>Engine: Hermes</Text>
-            </View>
-          )}
-          <View style={styles.body}> */}
-      <RNCamera />
-      {/* </View>
-        </ScrollView>
-      </SafeAreaView> */}
-    </>
-  );
-};
+class App extends React.Component {
+  vb = null;
+  state = {
+    isStreaming: false,
+  };
+
+
+  videoSettings = {
+    preset: 12,
+    bitrate: 400000,
+    profile: 1,
+    fps: 15,
+    videoFrontMirror: false,
+  };
+
+  cameraSettings = { cameraId: 1, cameraFrontMirror: true };
+
+
+  audioSettings = { bitrate: 32000, profile: 1, samplerate: 44100 };
+
+
+  channel = 'pvip';
+
+
+  get height() {
+    return Dimensions.get('window').height;
+  }
+
+
+  get width() {
+    return Dimensions.get('window').width;
+  }
+
+
+  toggleStream = async () => {
+    await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.CAMERA);
+
+    if (this.state.isStreaming) {
+      this.vb.stop();
+    } else {
+      this.vb.start();
+    }
+    this.setState({
+      isStreaming: !this.state.isStreaming,
+    });
+  };
+
+
+  render() {
+    console.log(this.channel);
+    return (
+      <>
+        <StatusBar barStyle="dark-content" />
+        <View style={styles.view}>
+          <NodeCameraView
+            style={{
+              height: this.height,
+              width: this.width,
+              zIndex: 1,
+              backgroundColor: '#000000',
+            }}
+            ref={vb => {
+              this.vb = vb;
+            }}
+            outputUrl={`rtmp://192.168.1.23/live/${this.channel}`}
+            camera={this.cameraSettings}
+            audio={this.audioSettings}
+            video={this.videoSettings}
+            autopreview={true}></NodeCameraView>
+          <View style={styles.buttonWrapper}>
+            <TouchableOpacity onPress={this.toggleStream}>
+              <View style={styles.button}>
+                <Text style={styles.buttonText}>
+                  {this.state.isStreaming
+                    ? 'Stop Streaming'
+                    : 'Start Streaming'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </>
+    );
+  }
+}
 
 const styles = StyleSheet.create({
-  scrollView: {
-    backgroundColor: Colors.lighter,
+  view: {
+    height: Dimensions.get('window').height,
+    width: Dimensions.get('window').width,
+    position: 'relative',
   },
-  engine: {
+  buttonWrapper: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: Dimensions.get('window').width,
+    height: 50,
     position: 'absolute',
-    right: 0,
+    zIndex: 2,
+    bottom: 50,
   },
-  body: {
-    backgroundColor: Colors.white,
+  button: {
+    width: 200,
+    height: 40,
+    backgroundColor: '#014484',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingLeft: 15,
+    paddingRight: 15,
   },
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: Colors.black,
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-    color: Colors.dark,
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-  footer: {
-    color: Colors.dark,
-    fontSize: 12,
-    fontWeight: '600',
-    padding: 4,
-    paddingRight: 12,
-    textAlign: 'right',
+  buttonText: {
+    color: '#ffffff',
+    fontFamily: 'system',
   },
 });
 
